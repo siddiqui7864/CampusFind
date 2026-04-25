@@ -1,4 +1,4 @@
-// ===== CampusFind — Lost & Found Portal =====
+// ===== Findora — Lost & Found Portal =====
 
 // ===== Sample Data =====
 const SAMPLE_ITEMS = [
@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ===== LocalStorage =====
 function loadItems() {
-    const stored = localStorage.getItem("campusfind_items");
+    const stored = localStorage.getItem("findora_items");
     if (stored) {
         allItems = JSON.parse(stored);
     } else {
@@ -121,7 +121,7 @@ function loadItems() {
     }
 }
 function saveItems() {
-    localStorage.setItem("campusfind_items", JSON.stringify(allItems));
+    localStorage.setItem("findora_items", JSON.stringify(allItems));
 }
 
 // ===== Navbar =====

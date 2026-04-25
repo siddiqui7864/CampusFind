@@ -1,4 +1,4 @@
-// ===== Admin Portal — CampusFind =====
+// ===== Admin Portal — Findora =====
 
 const CATEGORY_LABELS = {
     electronics: "Electronics", accessories: "Accessories", documents: "Documents",
@@ -27,7 +27,7 @@ let confirmCallback = null;
 // ===== Init =====
 document.addEventListener("DOMContentLoaded", () => {
     // Check session
-    if (sessionStorage.getItem("campusfind_admin") === "true") {
+    if (sessionStorage.getItem("findora_admin") === "true") {
         showDashboard();
     }
     initLogin();
@@ -54,7 +54,7 @@ function initLogin() {
         const user = document.getElementById("adminUser").value.trim();
         const pass = document.getElementById("adminPass").value;
         if (user === ADMIN_USER && pass === ADMIN_PASS) {
-            sessionStorage.setItem("campusfind_admin", "true");
+            sessionStorage.setItem("findora_admin", "true");
             showDashboard();
         } else {
             document.getElementById("loginError").style.display = "flex";
@@ -63,7 +63,7 @@ function initLogin() {
     });
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
-        sessionStorage.removeItem("campusfind_admin");
+        sessionStorage.removeItem("findora_admin");
         location.reload();
     });
 }
@@ -77,11 +77,11 @@ function showDashboard() {
 
 // ===== Data =====
 function loadItems() {
-    const stored = localStorage.getItem("campusfind_items");
+    const stored = localStorage.getItem("findora_items");
     allItems = stored ? JSON.parse(stored) : [];
 }
 function saveItems() {
-    localStorage.setItem("campusfind_items", JSON.stringify(allItems));
+    localStorage.setItem("findora_items", JSON.stringify(allItems));
 }
 
 // ===== Sidebar =====

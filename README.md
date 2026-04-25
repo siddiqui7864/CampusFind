@@ -1,4 +1,4 @@
-# 🔍 CampusFind
+# 🔍 Findora
 
 A campus lost & found web portal — report, browse, and claim lost items with filters, search, and an admin dashboard. Built with vanilla HTML, CSS & JS.
 
@@ -6,7 +6,7 @@ A campus lost & found web portal — report, browse, and claim lost items with f
 
 ## 📖 About
 
-**CampusFind** is a fully client-side lost and found portal for college campuses.  
+**Findora** is a fully client-side lost and found portal for college campuses.  
 
 Students can:
 - Report lost or found items  
