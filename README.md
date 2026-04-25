@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/HACKATHON-SUBMISSION-ff6b6b?style=for-the-badge&labelColor=0d1117" alt="Hackathon"/>
-  <img src="https://img.shields.io/badge/BUILT_IN-24_HOURS-7c5cff?style=for-the-badge&labelColor=0d1117" alt="24hrs"/>
-  <img src="https://img.shields.io/badge/STACK-HTML%20%7C%20CSS%20%7C%20JS%20%7C%20SUPABASE-3ecf8e?style=for-the-badge&labelColor=0d1117" alt="Stack"/>
-</p>
+
 
 <h1 align="center">📍 Findora</h1>
 
