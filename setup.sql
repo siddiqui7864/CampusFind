@@ -5,7 +5,7 @@
 -- 1. Create items table
 CREATE TABLE IF NOT EXISTS items (
   id BIGSERIAL PRIMARY KEY,
-  type TEXT NOT NULL CHECK (type IN ('lost', 'found', 'claimed')),
+  type TEXT NOT NULL DEFAULT 'lost',
   name TEXT NOT NULL,
   category TEXT NOT NULL,
   location TEXT NOT NULL,
@@ -23,20 +23,21 @@ ALTER TABLE items ENABLE ROW LEVEL SECURITY;
 -- 3. Public access policies (anyone can read/write — fine for a campus portal)
 CREATE POLICY "Public read" ON items FOR SELECT USING (true);
 CREATE POLICY "Public insert" ON items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public update" ON items FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public update" ON items FOR UPDATE USING (true);
 CREATE POLICY "Public delete" ON items FOR DELETE USING (true);
 
--- 4. Create Storage bucket for item images
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('item-images', 'item-images', true)
-ON CONFLICT DO NOTHING;
+-- 4. Enable real-time for this table
+ALTER PUBLICATION supabase_realtime ADD TABLE items;
 
--- 5. Public storage policies
+-- 5. Create storage bucket for item images
+INSERT INTO storage.buckets (id, name, public) VALUES ('item-images', 'item-images', true);
+
+-- 6. Storage access policies
 CREATE POLICY "Public upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'item-images');
-CREATE POLICY "Public read images" ON storage.objects FOR SELECT USING (bucket_id = 'item-images');
-CREATE POLICY "Public delete images" ON storage.objects FOR DELETE USING (bucket_id = 'item-images');
+CREATE POLICY "Public view" ON storage.objects FOR SELECT USING (bucket_id = 'item-images');
+CREATE POLICY "Public delete storage" ON storage.objects FOR DELETE USING (bucket_id = 'item-images');
 
--- 6. Seed sample data
+-- 7. Seed sample data
 INSERT INTO items (type, name, category, location, date, description, reporter, contact) VALUES
 ('lost', 'Black iPhone 15 Pro', 'electronics', 'library', '2026-04-24', 'Lost my iPhone 15 Pro (black, 256GB) near the 2nd floor reading section. Has a clear case with a sticker on the back.', 'Aarav Mehta', 'aarav.m@campus.edu'),
 ('found', 'Silver House Keys (3 keys)', 'keys', 'cafeteria', '2026-04-24', 'Found a set of 3 silver keys on a red carabiner near the south entrance of the cafeteria.', 'Priya Sharma', 'priya.s@campus.edu'),

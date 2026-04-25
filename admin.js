@@ -1,3 +1,4 @@
+
 const CATEGORY_LABELS = {
     electronics: "Electronics", accessories: "Accessories", documents: "Documents",
     clothing: "Clothing", keys: "Keys", bags: "Bags & Bottles",
@@ -14,6 +15,7 @@ const CATEGORY_ICONS = {
     books: "fa-book", other: "fa-box"
 };
 
+
 const ADMIN_USER = "admin";
 const ADMIN_PASS = "admin123";
 
@@ -21,7 +23,9 @@ let allItems = [];
 let selectedIds = new Set();
 let confirmCallback = null;
 
+
 document.addEventListener("DOMContentLoaded", () => {
+    
     if (sessionStorage.getItem("findora_admin") === "true") {
         showDashboard();
     }
@@ -31,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initTableControls();
     initConfirm();
 });
+
 
 function initLogin() {
     const form = document.getElementById("loginForm");
@@ -67,26 +72,22 @@ async function showDashboard() {
     document.getElementById("dashboard").style.display = "flex";
     await loadItems();
     renderAll();
-    subscribeRealtime();
+    subscribeToChanges();
 }
 
+// ===== Supabase Data Layer =====
 async function loadItems() {
-    try {
-        const { data, error } = await supabase
-            .from('items')
-            .select('*')
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        allItems = data || [];
-    } catch (err) {
-        console.error('Error loading items:', err);
-        showToast('Failed to load items.', 'error');
+    const { data, error } = await db.from('items').select('*').order('created_at', { ascending: false });
+    if (error) {
+        console.error('Error loading items:', error);
+        allItems = [];
+        return;
     }
+    allItems = data || [];
 }
 
-function subscribeRealtime() {
-    supabase
-        .channel('admin:items')
+function subscribeToChanges() {
+    db.channel('admin-items')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, async () => {
             await loadItems();
             renderAll();
@@ -94,10 +95,13 @@ function subscribeRealtime() {
         .subscribe();
 }
 
+
 function initSidebar() {
     const sidebar = document.getElementById("sidebar");
     const toggle = document.getElementById("sidebarToggle");
     toggle.addEventListener("click", () => sidebar.classList.toggle("open"));
+
+    
     document.addEventListener("click", e => {
         if (window.innerWidth <= 768 && sidebar.classList.contains("open") &&
             !sidebar.contains(e.target) && e.target !== toggle) {
@@ -105,6 +109,7 @@ function initSidebar() {
         }
     });
 }
+
 
 function initTabs() {
     document.querySelectorAll("[data-tab]").forEach(link => {
@@ -123,19 +128,24 @@ function switchTab(tab) {
     document.querySelector(`.sidebar-link[data-tab="${tab}"]`)?.classList.add("active");
     document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
     document.getElementById(`tab-${tab}`)?.classList.add("active");
+
     const titles = { overview: "Overview", items: "All Items", claimed: "Claimed Items" };
     document.getElementById("pageTitle").textContent = titles[tab] || "Dashboard";
+
+    // Close mobile sidebar
     document.getElementById("sidebar").classList.remove("open");
     selectedIds.clear();
     renderAll();
 }
 
+// ===== Render Everything =====
 function renderAll() {
     renderOverview();
     renderItemsTable();
     renderClaimedTable();
 }
 
+// ===== Overview =====
 function renderOverview() {
     const total = allItems.length;
     const lost = allItems.filter(i => i.type === "lost").length;
@@ -147,6 +157,7 @@ function renderOverview() {
     document.getElementById("statFound").textContent = found;
     document.getElementById("statClaimed").textContent = claimed;
 
+    // Recent items
     const recent = [...allItems].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
     const recentList = document.getElementById("recentList");
     if (recent.length === 0) {
@@ -168,6 +179,7 @@ function renderOverview() {
         }).join("");
     }
 
+    // Category breakdown
     const catCounts = {};
     allItems.forEach(i => { catCounts[i.category] = (catCounts[i.category] || 0) + 1; });
     const maxCount = Math.max(...Object.values(catCounts), 1);
@@ -190,6 +202,7 @@ function renderOverview() {
     }
 }
 
+// ===== Items Table =====
 function getAdminFilters() {
     return {
         search: document.getElementById("adminSearch").value.trim().toLowerCase(),
@@ -213,6 +226,7 @@ function renderItemsTable() {
     const tbody = document.getElementById("adminTableBody");
     const empty = document.getElementById("tableEmpty");
     const countEl = document.getElementById("itemCount");
+
     countEl.textContent = `${items.length} item${items.length !== 1 ? "s" : ""}`;
 
     if (items.length === 0) {
@@ -243,9 +257,11 @@ function renderItemsTable() {
             </tr>
         `;
     }).join("");
+
     updateBulkBtn();
 }
 
+// ===== Claimed Table =====
 function renderClaimedTable() {
     const search = document.getElementById("claimedSearch").value.trim().toLowerCase();
     const items = allItems.filter(i => i.type === "claimed" && (!search || i.name.toLowerCase().includes(search) || i.reporter.toLowerCase().includes(search)))
@@ -254,6 +270,7 @@ function renderClaimedTable() {
     const tbody = document.getElementById("claimedTableBody");
     const empty = document.getElementById("claimedEmpty");
     const countEl = document.getElementById("claimedCount");
+
     countEl.textContent = `${items.length} item${items.length !== 1 ? "s" : ""}`;
 
     if (items.length === 0) {
@@ -283,12 +300,15 @@ function renderClaimedTable() {
     }).join("");
 }
 
+// ===== Table Controls =====
 function initTableControls() {
+    // Search & filters
     document.getElementById("adminSearch").addEventListener("input", () => renderItemsTable());
     document.getElementById("adminFilterStatus").addEventListener("change", () => renderItemsTable());
     document.getElementById("adminFilterCategory").addEventListener("change", () => renderItemsTable());
     document.getElementById("claimedSearch").addEventListener("input", () => renderClaimedTable());
 
+    // Select all
     document.getElementById("selectAll").addEventListener("change", function () {
         const checks = document.querySelectorAll(".row-check");
         checks.forEach(c => {
@@ -308,6 +328,7 @@ function initTableControls() {
         updateBulkClaimedBtn();
     });
 
+    // Row checkboxes (delegated)
     document.getElementById("adminTableBody").addEventListener("change", e => {
         if (e.target.classList.contains("row-check")) {
             const id = parseInt(e.target.dataset.id);
@@ -323,76 +344,58 @@ function initTableControls() {
         }
     });
 
+    // Bulk delete
     document.getElementById("bulkDeleteBtn").addEventListener("click", () => {
         const count = selectedIds.size;
         if (!count) return;
         showConfirm(`Delete ${count} item${count > 1 ? "s" : ""}?`, "This will permanently remove the selected items.", async () => {
             try {
-                const ids = Array.from(selectedIds);
-                // Delete images from storage first
-                for (const id of ids) {
-                    const item = allItems.find(i => i.id === id);
-                    if (item && item.image && !item.image.startsWith('data:') && !item.image.startsWith('http')) {
-                        await supabase.storage.from('item-images').remove([item.image]);
-                    }
-                }
-                const { error } = await supabase.from('items').delete().in('id', ids);
+                const ids = [...selectedIds];
+                const { error } = await db.from('items').delete().in('id', ids);
                 if (error) throw error;
                 selectedIds.clear();
                 await loadItems();
                 renderAll();
                 showToast(`${count} item${count > 1 ? "s" : ""} deleted.`, "success");
             } catch (err) {
-                console.error('Bulk delete error:', err);
-                showToast('Failed to delete items.', 'error');
+                console.error(err);
+                showToast("Failed to delete items.", "error");
             }
         });
     });
-
     document.getElementById("bulkDeleteClaimedBtn").addEventListener("click", () => {
         const count = selectedIds.size;
         if (!count) return;
         showConfirm(`Delete ${count} claimed item${count > 1 ? "s" : ""}?`, "This will permanently remove the selected items.", async () => {
             try {
-                const ids = Array.from(selectedIds);
-                for (const id of ids) {
-                    const item = allItems.find(i => i.id === id);
-                    if (item && item.image && !item.image.startsWith('data:') && !item.image.startsWith('http')) {
-                        await supabase.storage.from('item-images').remove([item.image]);
-                    }
-                }
-                const { error } = await supabase.from('items').delete().in('id', ids);
+                const ids = [...selectedIds];
+                const { error } = await db.from('items').delete().in('id', ids);
                 if (error) throw error;
                 selectedIds.clear();
                 await loadItems();
                 renderAll();
                 showToast(`${count} item${count > 1 ? "s" : ""} deleted.`, "success");
             } catch (err) {
-                console.error('Bulk delete error:', err);
-                showToast('Failed to delete items.', 'error');
+                console.error(err);
+                showToast("Failed to delete items.", "error");
             }
         });
     });
 
+    // Clear all claimed
     document.getElementById("clearAllClaimed").addEventListener("click", () => {
         const claimed = allItems.filter(i => i.type === "claimed");
         if (!claimed.length) { showToast("No claimed items to remove.", "error"); return; }
         showConfirm(`Remove all ${claimed.length} claimed items?`, "This will permanently delete all items marked as claimed.", async () => {
             try {
-                const ids = claimed.map(i => i.id);
-                for (const item of claimed) {
-                    if (item.image && !item.image.startsWith('data:') && !item.image.startsWith('http')) {
-                        await supabase.storage.from('item-images').remove([item.image]);
-                    }
-                }
-                const { error } = await supabase.from('items').delete().in('id', ids);
+                const { error } = await db.from('items').delete().eq('type', 'claimed');
                 if (error) throw error;
                 await loadItems();
                 renderAll();
                 showToast("All claimed items removed.", "success");
             } catch (err) {
-                console.error('Clear claimed error:', err);
-                showToast('Failed to clear claimed items.', 'error');
+                console.error(err);
+                showToast("Failed to remove claimed items.", "error");
             }
         });
     });
@@ -405,41 +408,40 @@ function updateBulkClaimedBtn() {
     document.getElementById("bulkDeleteClaimedBtn").disabled = selectedIds.size === 0;
 }
 
+// ===== Item Actions =====
 async function adminDeleteItem(id) {
     const item = allItems.find(i => i.id === id);
     if (!item) return;
     showConfirm(`Delete "${item.name}"?`, "This item will be permanently removed.", async () => {
         try {
-            if (item.image && !item.image.startsWith('data:') && !item.image.startsWith('http')) {
-                await supabase.storage.from('item-images').remove([item.image]);
-            }
-            const { error } = await supabase.from('items').delete().eq('id', id);
+            const { error } = await db.from('items').delete().eq('id', id);
             if (error) throw error;
             selectedIds.delete(id);
             await loadItems();
             renderAll();
             showToast("Item deleted.", "success");
         } catch (err) {
-            console.error('Delete error:', err);
-            showToast('Failed to delete item.', 'error');
+            console.error(err);
+            showToast("Failed to delete item.", "error");
         }
     });
 }
 
 async function adminMarkClaimed(id) {
     try {
-        const { error } = await supabase.from('items').update({ type: 'claimed' }).eq('id', id);
+        const item = allItems.find(i => i.id === id);
+        const { error } = await db.from('items').update({ type: 'claimed' }).eq('id', id);
         if (error) throw error;
         await loadItems();
         renderAll();
-        const item = allItems.find(i => i.id === id);
-        showToast(`"${item ? item.name : 'Item'}" marked as claimed.`, "success");
+        showToast(`"${item?.name}" marked as claimed.`, "success");
     } catch (err) {
-        console.error('Mark claimed error:', err);
-        showToast('Failed to update item.', 'error');
+        console.error(err);
+        showToast("Failed to update item.", "error");
     }
 }
 
+// ===== Confirm Dialog =====
 function initConfirm() {
     document.getElementById("confirmCancel").addEventListener("click", closeConfirm);
     document.getElementById("confirmModal").addEventListener("click", e => {
@@ -463,6 +465,7 @@ function closeConfirm() {
     confirmCallback = null;
 }
 
+// ===== Toast =====
 function showToast(msg, type = "success") {
     const container = document.getElementById("toastContainer");
     const toast = document.createElement("div");
@@ -472,6 +475,7 @@ function showToast(msg, type = "success") {
     setTimeout(() => { toast.style.opacity = "0"; toast.style.transform = "translateX(100%)"; setTimeout(() => toast.remove(), 400); }, 3000);
 }
 
+// ===== Utilities =====
 function formatDate(dateStr) {
     const d = new Date(dateStr);
     return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });

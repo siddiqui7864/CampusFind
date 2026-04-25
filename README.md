@@ -48,4 +48,4 @@ A password-protected admin panel allows staff to:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/siddiqui7864/Findora.git
+   git clone https://github.com/siddiqui7864/demo.git

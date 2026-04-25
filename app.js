@@ -1,3 +1,4 @@
+
 const CATEGORY_ICONS = {
     electronics: "fa-laptop", accessories: "fa-gem", documents: "fa-file-alt",
     clothing: "fa-shirt", keys: "fa-key", bags: "fa-bag-shopping",
@@ -14,11 +15,15 @@ const LOCATION_LABELS = {
     parking: "Parking Lot", hostel: "Hostel", other: "Other"
 };
 
+// ===== State =====
 let allItems = [];
 let displayCount = 9;
+let selectedImageFile = null;
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadItems();
+// ===== Init =====
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadItems();
+    renderItems();
     initNavbar();
     initHeroSearch();
     initFilters();
@@ -27,37 +32,53 @@ document.addEventListener("DOMContentLoaded", () => {
     initCounters();
     initScrollAnimations();
     setDefaultDate();
-    subscribeRealtime();
+    subscribeToChanges();
 });
 
+// ===== Supabase Data Layer =====
 async function loadItems() {
-    try {
-        const { data, error } = await supabase
-            .from('items')
-            .select('*')
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        allItems = data || [];
-        renderItems();
-    } catch (err) {
-        console.error('Error loading items:', err);
-        showToast('Failed to load items. Please refresh.', 'error');
+    const { data, error } = await db.from('items').select('*').order('created_at', { ascending: false });
+    if (error) {
+        console.error('Error loading items:', error);
+        allItems = [];
+        return;
     }
+    allItems = data || [];
 }
 
-function subscribeRealtime() {
-    supabase
-        .channel('public:items')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => {
-            loadItems();
+function subscribeToChanges() {
+    db.channel('public-items')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, async () => {
+            await loadItems();
+            renderItems();
         })
         .subscribe();
 }
 
+async function addItem(itemData) {
+    const { error } = await db.from('items').insert(itemData);
+    if (error) throw error;
+}
+
+async function updateItemType(id, type) {
+    const { error } = await db.from('items').update({ type }).eq('id', id);
+    if (error) throw error;
+}
+
+async function uploadImage(file) {
+    const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`;
+    const { data, error } = await db.storage.from('item-images').upload(fileName, file);
+    if (error) throw error;
+    const { data: urlData } = db.storage.from('item-images').getPublicUrl(data.path);
+    return urlData.publicUrl;
+}
+
+// ===== Navbar =====
 function initNavbar() {
     const navbar = document.getElementById("navbar");
     const toggle = document.getElementById("navToggle");
     const links = document.getElementById("navLinks");
+
     window.addEventListener("scroll", () => {
         navbar.classList.toggle("scrolled", window.scrollY > 50);
     });
@@ -75,9 +96,11 @@ function initNavbar() {
     });
 }
 
+// ===== Hero Search =====
 function initHeroSearch() {
     const input = document.getElementById("heroSearch");
     const btn = document.getElementById("heroSearchBtn");
+
     const doSearch = () => {
         const q = input.value.trim();
         if (q) {
@@ -88,6 +111,7 @@ function initHeroSearch() {
     };
     btn.addEventListener("click", doSearch);
     input.addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+
     document.querySelectorAll(".tag[data-search]").forEach(tag => {
         tag.addEventListener("click", () => {
             input.value = tag.dataset.search;
@@ -96,6 +120,7 @@ function initHeroSearch() {
     });
 }
 
+// ===== Filters =====
 function initFilters() {
     ["filterSearch", "filterStatus", "filterCategory", "filterLocation", "filterDate"].forEach(id => {
         document.getElementById(id).addEventListener(id === "filterSearch" ? "input" : "change", applyFilters);
@@ -157,11 +182,12 @@ function addFilterTag(container, text, onRemove) {
     container.appendChild(tag);
 }
 
+// ===== Render Items =====
 function filterItems() {
     const f = getFilters();
     const now = new Date();
     return allItems.filter(item => {
-        if (f.search && !item.name.toLowerCase().includes(f.search) && !(item.description || '').toLowerCase().includes(f.search) && !item.category.toLowerCase().includes(f.search)) return false;
+        if (f.search && !item.name.toLowerCase().includes(f.search) && !item.description.toLowerCase().includes(f.search) && !item.category.toLowerCase().includes(f.search)) return false;
         if (f.status !== "all" && item.type !== f.status) return false;
         if (f.category !== "all" && item.category !== f.category) return false;
         if (f.location !== "all" && item.location !== f.location) return false;
@@ -174,13 +200,6 @@ function filterItems() {
         }
         return true;
     }).sort((a, b) => new Date(b.date) - new Date(a.date));
-}
-
-function getImageSrc(image) {
-    if (!image) return null;
-    if (image.startsWith('data:') || image.startsWith('http')) return image;
-    const { data } = supabase.storage.from('item-images').getPublicUrl(image);
-    return data.publicUrl;
 }
 
 function renderItems() {
@@ -208,11 +227,10 @@ function renderItems() {
         const badgeClass = item.type === "lost" ? "badge-lost" : item.type === "found" ? "badge-found" : "badge-claimed";
         const icon = CATEGORY_ICONS[item.category] || "fa-box";
         const dateStr = formatDate(item.date);
-        const imageSrc = getImageSrc(item.image);
 
         card.innerHTML = `
             <div class="item-card-image">
-                ${imageSrc ? `<img src="${imageSrc}" alt="${item.name}">` : `<i class="fas ${icon} placeholder-icon"></i>`}
+                ${item.image ? `<img src="${item.image}" alt="${item.name}">` : `<i class="fas ${icon} placeholder-icon"></i>`}
                 <span class="item-badge ${badgeClass}">${item.type}</span>
             </div>
             <div class="item-card-body">
@@ -233,6 +251,7 @@ function renderItems() {
     });
 }
 
+// ===== Detail Modal =====
 function initDetailModal() {
     document.getElementById("closeDetailModal").addEventListener("click", () => {
         document.getElementById("detailModal").classList.remove("active");
@@ -252,11 +271,10 @@ function showDetail(id) {
     const body = document.getElementById("detailBody");
     const badgeClass = item.type === "lost" ? "badge-lost" : item.type === "found" ? "badge-found" : "badge-claimed";
     const icon = CATEGORY_ICONS[item.category] || "fa-box";
-    const imageSrc = getImageSrc(item.image);
 
     body.innerHTML = `
         <div class="detail-image">
-            ${imageSrc ? `<img src="${imageSrc}" alt="${item.name}">` : `<i class="fas ${icon} placeholder-icon"></i>`}
+            ${item.image ? `<img src="${item.image}" alt="${item.name}">` : `<i class="fas ${icon} placeholder-icon"></i>`}
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <span class="item-badge ${badgeClass}" style="position:static;">${item.type}</span>
@@ -281,18 +299,19 @@ function showDetail(id) {
 
 async function markClaimed(id) {
     try {
-        const { error } = await supabase.from('items').update({ type: 'claimed' }).eq('id', id);
-        if (error) throw error;
+        await updateItemType(id, 'claimed');
+        await loadItems();
+        renderItems();
         document.getElementById("detailModal").classList.remove("active");
         document.body.style.overflow = "";
         showToast("Item marked as claimed! 🎉", "success");
-        await loadItems();
     } catch (err) {
-        console.error('Error marking claimed:', err);
-        showToast('Failed to update item.', 'error');
+        console.error(err);
+        showToast("Failed to update item. Please try again.", "error");
     }
 }
 
+// ===== Post Modal =====
 function initPostModal() {
     const modal = document.getElementById("postModal");
     const openBtns = document.querySelectorAll("#openPostModal");
@@ -303,7 +322,6 @@ function initPostModal() {
     const preview = document.getElementById("imagePreview");
     const previewImg = document.getElementById("previewImg");
     const removeImg = document.getElementById("removeImage");
-    let selectedFile = null;
 
     openBtns.forEach(btn => btn.addEventListener("click", () => {
         modal.classList.add("active");
@@ -317,6 +335,7 @@ function initPostModal() {
         if (e.target === modal) { modal.classList.remove("active"); document.body.style.overflow = ""; }
     });
 
+    // Image upload
     fileArea.addEventListener("click", () => fileInput.click());
     fileArea.addEventListener("dragover", e => { e.preventDefault(); fileArea.style.borderColor = "var(--primary)"; });
     fileArea.addEventListener("dragleave", () => { fileArea.style.borderColor = ""; });
@@ -327,7 +346,7 @@ function initPostModal() {
     fileInput.addEventListener("change", () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
     removeImg.addEventListener("click", () => {
         fileInput.value = "";
-        selectedFile = null;
+        selectedImageFile = null;
         preview.style.display = "none";
         fileArea.style.display = "";
         previewImg.src = "";
@@ -335,7 +354,7 @@ function initPostModal() {
 
     function handleFile(file) {
         if (!file.type.startsWith("image/")) return;
-        selectedFile = file;
+        selectedImageFile = file;
         const reader = new FileReader();
         reader.onload = e => {
             previewImg.src = e.target.result;
@@ -345,6 +364,7 @@ function initPostModal() {
         reader.readAsDataURL(file);
     }
 
+    // Submit
     form.addEventListener("submit", async e => {
         e.preventDefault();
         const name = document.getElementById("itemName").value.trim();
@@ -364,28 +384,24 @@ function initPostModal() {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
         try {
-            let imagePath = null;
-            if (selectedFile) {
-                const fileExt = selectedFile.name.split('.').pop();
-                const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-                const { error: uploadError } = await supabase.storage.from('item-images').upload(fileName, selectedFile);
-                if (uploadError) throw uploadError;
-                imagePath = fileName;
+            let imageUrl = null;
+            if (selectedImageFile) {
+                imageUrl = await uploadImage(selectedImageFile);
             }
 
-            const newItem = {
+            await addItem({
                 type: document.querySelector('input[name="itemType"]:checked').value,
                 name, category, location, date,
                 description: document.getElementById("itemDescription").value.trim(),
                 reporter, contact,
-                image: imagePath,
-            };
+                image: imageUrl,
+            });
 
-            const { error } = await supabase.from('items').insert([newItem]);
-            if (error) throw error;
+            await loadItems();
+            renderItems();
 
             form.reset();
-            selectedFile = null;
+            selectedImageFile = null;
             preview.style.display = "none";
             fileArea.style.display = "";
             previewImg.src = "";
@@ -393,10 +409,9 @@ function initPostModal() {
             document.body.style.overflow = "";
             showToast("Item reported successfully! ✅", "success");
             document.getElementById("items-section").scrollIntoView({ behavior: "smooth" });
-            await loadItems();
         } catch (err) {
-            console.error('Error submitting item:', err);
-            showToast('Failed to submit. Please try again.', 'error');
+            console.error(err);
+            showToast("Failed to submit. Please try again.", "error");
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Report';
@@ -409,6 +424,7 @@ function setDefaultDate() {
     document.getElementById("itemDate").value = d.toISOString().split("T")[0];
 }
 
+// ===== Toast =====
 function showToast(msg, type = "success") {
     const container = document.getElementById("toastContainer");
     const toast = document.createElement("div");
@@ -418,6 +434,7 @@ function showToast(msg, type = "success") {
     setTimeout(() => { toast.style.opacity = "0"; toast.style.transform = "translateX(100%)"; setTimeout(() => toast.remove(), 400); }, 3500);
 }
 
+// ===== Counters Animation =====
 function initCounters() {
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -429,6 +446,7 @@ function initCounters() {
             }
         });
     }, { threshold: 0.3 });
+
     document.querySelectorAll(".hero-stats, .stats-grid").forEach(el => observer.observe(el));
 }
 
@@ -442,6 +460,7 @@ function animateCounter(el, target) {
     }, 25);
 }
 
+// ===== Scroll Animations =====
 function initScrollAnimations() {
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -451,6 +470,7 @@ function initScrollAnimations() {
             }
         });
     }, { threshold: 0.1 });
+
     document.querySelectorAll(".step-card, .stat-card, .section-header").forEach(el => {
         el.style.opacity = "0";
         el.style.transform = "translateY(30px)";
@@ -459,8 +479,10 @@ function initScrollAnimations() {
     });
 }
 
+// Add animation class
 document.head.insertAdjacentHTML("beforeend", `<style>.animate-in{opacity:1!important;transform:translateY(0)!important;}</style>`);
 
+// ===== Utilities =====
 function formatDate(dateStr) {
     const d = new Date(dateStr);
     const now = new Date();
