@@ -1,81 +1,3 @@
-// ===== Findora — Lost & Found Portal =====
-
-// ===== Sample Data =====
-const SAMPLE_ITEMS = [
-    {
-        id: 1, type: "lost", name: "Black iPhone 15 Pro", category: "electronics",
-        location: "library", date: "2026-04-24",
-        description: "Lost my iPhone 15 Pro (black, 256GB) near the 2nd floor reading section. Has a clear case with a sticker on the back.",
-        reporter: "Aarav Mehta", contact: "aarav.m@campus.edu", image: null
-    },
-    {
-        id: 2, type: "found", name: "Silver House Keys (3 keys)", category: "keys",
-        location: "cafeteria", date: "2026-04-24",
-        description: "Found a set of 3 silver keys on a red carabiner near the south entrance of the cafeteria.",
-        reporter: "Priya Sharma", contact: "priya.s@campus.edu", image: null
-    },
-    {
-        id: 3, type: "lost", name: "Brown Leather Wallet", category: "accessories",
-        location: "auditorium", date: "2026-04-23",
-        description: "Lost a brown leather bifold wallet (brand: Tommy Hilfiger). Contains college ID and debit card.",
-        reporter: "Rohan Gupta", contact: "rohan.g@campus.edu", image: null
-    },
-    {
-        id: 4, type: "found", name: "Blue JBL Earbuds Case", category: "electronics",
-        location: "gym", date: "2026-04-23",
-        description: "Found a blue JBL earbuds charging case on the bench near the treadmills. Earbuds are inside.",
-        reporter: "Sneha Patel", contact: "sneha.p@campus.edu", image: null
-    },
-    {
-        id: 5, type: "lost", name: "College ID Card — Vikram S.", category: "documents",
-        location: "classroom", date: "2026-04-22",
-        description: "Lost my college ID card, name Vikram Srinivasan, Roll No. CS2024-087. Last seen in Room 302.",
-        reporter: "Vikram S.", contact: "+91 98765 12345", image: null
-    },
-    {
-        id: 6, type: "found", name: "Black Laptop Bag (HP)", category: "bags",
-        location: "parking", date: "2026-04-22",
-        description: "Found a black HP laptop bag near the two-wheeler parking area. Has a charger and notebook inside.",
-        reporter: "Ananya Iyer", contact: "ananya.i@campus.edu", image: null
-    },
-    {
-        id: 7, type: "claimed", name: "Ray-Ban Sunglasses", category: "accessories",
-        location: "cafeteria", date: "2026-04-20",
-        description: "Black frame Ray-Ban sunglasses found near the vending machines. Successfully returned to owner!",
-        reporter: "Karan Joshi", contact: "karan.j@campus.edu", image: null
-    },
-    {
-        id: 8, type: "found", name: "Data Structures Textbook", category: "books",
-        location: "library", date: "2026-04-21",
-        description: "Found a 'Data Structures and Algorithms in C++' textbook on the 3rd floor study table. Name inside: D. Kumar.",
-        reporter: "Meera Nair", contact: "meera.n@campus.edu", image: null
-    },
-    {
-        id: 9, type: "lost", name: "Red Hoodie (Nike)", category: "clothing",
-        location: "hostel", date: "2026-04-21",
-        description: "Left my red Nike hoodie (size M) in the hostel common room. Has my initials 'RK' on the tag.",
-        reporter: "Ravi Kumar", contact: "+91 91234 56789", image: null
-    },
-    {
-        id: 10, type: "found", name: "Steel Water Bottle (750ml)", category: "bags",
-        location: "lab", date: "2026-04-22",
-        description: "Found a steel water bottle with floral stickers in Computer Lab 2. Left on the desk near Window 3.",
-        reporter: "Tanya Reddy", contact: "tanya.r@campus.edu", image: null
-    },
-    {
-        id: 11, type: "lost", name: "USB Drive (32GB SanDisk)", category: "electronics",
-        location: "lab", date: "2026-04-23",
-        description: "Lost a red 32GB SanDisk USB drive in Computer Lab 1. Contains important project files.",
-        reporter: "Arjun Nair", contact: "arjun.n@campus.edu", image: null
-    },
-    {
-        id: 12, type: "found", name: "Prescription Glasses", category: "accessories",
-        location: "classroom", date: "2026-04-24",
-        description: "Found a pair of black-framed prescription glasses in Room 205 after the morning lecture.",
-        reporter: "Divya Rao", contact: "divya.r@campus.edu", image: null
-    }
-];
-
 const CATEGORY_ICONS = {
     electronics: "fa-laptop", accessories: "fa-gem", documents: "fa-file-alt",
     clothing: "fa-shirt", keys: "fa-key", bags: "fa-bag-shopping",
@@ -92,14 +14,11 @@ const LOCATION_LABELS = {
     parking: "Parking Lot", hostel: "Hostel", other: "Other"
 };
 
-// ===== State =====
 let allItems = [];
 let displayCount = 9;
 
-// ===== Init =====
 document.addEventListener("DOMContentLoaded", () => {
     loadItems();
-    renderItems();
     initNavbar();
     initHeroSearch();
     initFilters();
@@ -108,28 +27,37 @@ document.addEventListener("DOMContentLoaded", () => {
     initCounters();
     initScrollAnimations();
     setDefaultDate();
+    subscribeRealtime();
 });
 
-// ===== LocalStorage =====
-function loadItems() {
-    const stored = localStorage.getItem("findora_items");
-    if (stored) {
-        allItems = JSON.parse(stored);
-    } else {
-        allItems = [...SAMPLE_ITEMS];
-        saveItems();
+async function loadItems() {
+    try {
+        const { data, error } = await supabase
+            .from('items')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        allItems = data || [];
+        renderItems();
+    } catch (err) {
+        console.error('Error loading items:', err);
+        showToast('Failed to load items. Please refresh.', 'error');
     }
 }
-function saveItems() {
-    localStorage.setItem("findora_items", JSON.stringify(allItems));
+
+function subscribeRealtime() {
+    supabase
+        .channel('public:items')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => {
+            loadItems();
+        })
+        .subscribe();
 }
 
-// ===== Navbar =====
 function initNavbar() {
     const navbar = document.getElementById("navbar");
     const toggle = document.getElementById("navToggle");
     const links = document.getElementById("navLinks");
-
     window.addEventListener("scroll", () => {
         navbar.classList.toggle("scrolled", window.scrollY > 50);
     });
@@ -147,11 +75,9 @@ function initNavbar() {
     });
 }
 
-// ===== Hero Search =====
 function initHeroSearch() {
     const input = document.getElementById("heroSearch");
     const btn = document.getElementById("heroSearchBtn");
-
     const doSearch = () => {
         const q = input.value.trim();
         if (q) {
@@ -162,7 +88,6 @@ function initHeroSearch() {
     };
     btn.addEventListener("click", doSearch);
     input.addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
-
     document.querySelectorAll(".tag[data-search]").forEach(tag => {
         tag.addEventListener("click", () => {
             input.value = tag.dataset.search;
@@ -171,7 +96,6 @@ function initHeroSearch() {
     });
 }
 
-// ===== Filters =====
 function initFilters() {
     ["filterSearch", "filterStatus", "filterCategory", "filterLocation", "filterDate"].forEach(id => {
         document.getElementById(id).addEventListener(id === "filterSearch" ? "input" : "change", applyFilters);
@@ -233,12 +157,11 @@ function addFilterTag(container, text, onRemove) {
     container.appendChild(tag);
 }
 
-// ===== Render Items =====
 function filterItems() {
     const f = getFilters();
     const now = new Date();
     return allItems.filter(item => {
-        if (f.search && !item.name.toLowerCase().includes(f.search) && !item.description.toLowerCase().includes(f.search) && !item.category.toLowerCase().includes(f.search)) return false;
+        if (f.search && !item.name.toLowerCase().includes(f.search) && !(item.description || '').toLowerCase().includes(f.search) && !item.category.toLowerCase().includes(f.search)) return false;
         if (f.status !== "all" && item.type !== f.status) return false;
         if (f.category !== "all" && item.category !== f.category) return false;
         if (f.location !== "all" && item.location !== f.location) return false;
@@ -251,6 +174,13 @@ function filterItems() {
         }
         return true;
     }).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+function getImageSrc(image) {
+    if (!image) return null;
+    if (image.startsWith('data:') || image.startsWith('http')) return image;
+    const { data } = supabase.storage.from('item-images').getPublicUrl(image);
+    return data.publicUrl;
 }
 
 function renderItems() {
@@ -278,10 +208,11 @@ function renderItems() {
         const badgeClass = item.type === "lost" ? "badge-lost" : item.type === "found" ? "badge-found" : "badge-claimed";
         const icon = CATEGORY_ICONS[item.category] || "fa-box";
         const dateStr = formatDate(item.date);
+        const imageSrc = getImageSrc(item.image);
 
         card.innerHTML = `
             <div class="item-card-image">
-                ${item.image ? `<img src="${item.image}" alt="${item.name}">` : `<i class="fas ${icon} placeholder-icon"></i>`}
+                ${imageSrc ? `<img src="${imageSrc}" alt="${item.name}">` : `<i class="fas ${icon} placeholder-icon"></i>`}
                 <span class="item-badge ${badgeClass}">${item.type}</span>
             </div>
             <div class="item-card-body">
@@ -302,7 +233,6 @@ function renderItems() {
     });
 }
 
-// ===== Detail Modal =====
 function initDetailModal() {
     document.getElementById("closeDetailModal").addEventListener("click", () => {
         document.getElementById("detailModal").classList.remove("active");
@@ -322,10 +252,11 @@ function showDetail(id) {
     const body = document.getElementById("detailBody");
     const badgeClass = item.type === "lost" ? "badge-lost" : item.type === "found" ? "badge-found" : "badge-claimed";
     const icon = CATEGORY_ICONS[item.category] || "fa-box";
+    const imageSrc = getImageSrc(item.image);
 
     body.innerHTML = `
         <div class="detail-image">
-            ${item.image ? `<img src="${item.image}" alt="${item.name}">` : `<i class="fas ${icon} placeholder-icon"></i>`}
+            ${imageSrc ? `<img src="${imageSrc}" alt="${item.name}">` : `<i class="fas ${icon} placeholder-icon"></i>`}
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <span class="item-badge ${badgeClass}" style="position:static;">${item.type}</span>
@@ -348,19 +279,20 @@ function showDetail(id) {
     document.body.style.overflow = "hidden";
 }
 
-function markClaimed(id) {
-    const item = allItems.find(i => i.id === id);
-    if (item) {
-        item.type = "claimed";
-        saveItems();
-        renderItems();
+async function markClaimed(id) {
+    try {
+        const { error } = await supabase.from('items').update({ type: 'claimed' }).eq('id', id);
+        if (error) throw error;
         document.getElementById("detailModal").classList.remove("active");
         document.body.style.overflow = "";
         showToast("Item marked as claimed! 🎉", "success");
+        await loadItems();
+    } catch (err) {
+        console.error('Error marking claimed:', err);
+        showToast('Failed to update item.', 'error');
     }
 }
 
-// ===== Post Modal =====
 function initPostModal() {
     const modal = document.getElementById("postModal");
     const openBtns = document.querySelectorAll("#openPostModal");
@@ -371,6 +303,7 @@ function initPostModal() {
     const preview = document.getElementById("imagePreview");
     const previewImg = document.getElementById("previewImg");
     const removeImg = document.getElementById("removeImage");
+    let selectedFile = null;
 
     openBtns.forEach(btn => btn.addEventListener("click", () => {
         modal.classList.add("active");
@@ -384,7 +317,6 @@ function initPostModal() {
         if (e.target === modal) { modal.classList.remove("active"); document.body.style.overflow = ""; }
     });
 
-    // Image upload
     fileArea.addEventListener("click", () => fileInput.click());
     fileArea.addEventListener("dragover", e => { e.preventDefault(); fileArea.style.borderColor = "var(--primary)"; });
     fileArea.addEventListener("dragleave", () => { fileArea.style.borderColor = ""; });
@@ -395,6 +327,7 @@ function initPostModal() {
     fileInput.addEventListener("change", () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
     removeImg.addEventListener("click", () => {
         fileInput.value = "";
+        selectedFile = null;
         preview.style.display = "none";
         fileArea.style.display = "";
         previewImg.src = "";
@@ -402,6 +335,7 @@ function initPostModal() {
 
     function handleFile(file) {
         if (!file.type.startsWith("image/")) return;
+        selectedFile = file;
         const reader = new FileReader();
         reader.onload = e => {
             previewImg.src = e.target.result;
@@ -411,8 +345,7 @@ function initPostModal() {
         reader.readAsDataURL(file);
     }
 
-    // Submit
-    form.addEventListener("submit", e => {
+    form.addEventListener("submit", async e => {
         e.preventDefault();
         const name = document.getElementById("itemName").value.trim();
         const category = document.getElementById("itemCategory").value;
@@ -426,26 +359,48 @@ function initPostModal() {
             return;
         }
 
-        const newItem = {
-            id: Date.now(),
-            type: document.querySelector('input[name="itemType"]:checked').value,
-            name, category, location, date,
-            description: document.getElementById("itemDescription").value.trim(),
-            reporter, contact,
-            image: previewImg.src || null,
-        };
-        allItems.unshift(newItem);
-        saveItems();
-        renderItems();
+        const submitBtn = document.getElementById("submitPost");
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
-        form.reset();
-        preview.style.display = "none";
-        fileArea.style.display = "";
-        previewImg.src = "";
-        modal.classList.remove("active");
-        document.body.style.overflow = "";
-        showToast("Item reported successfully! ✅", "success");
-        document.getElementById("items-section").scrollIntoView({ behavior: "smooth" });
+        try {
+            let imagePath = null;
+            if (selectedFile) {
+                const fileExt = selectedFile.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage.from('item-images').upload(fileName, selectedFile);
+                if (uploadError) throw uploadError;
+                imagePath = fileName;
+            }
+
+            const newItem = {
+                type: document.querySelector('input[name="itemType"]:checked').value,
+                name, category, location, date,
+                description: document.getElementById("itemDescription").value.trim(),
+                reporter, contact,
+                image: imagePath,
+            };
+
+            const { error } = await supabase.from('items').insert([newItem]);
+            if (error) throw error;
+
+            form.reset();
+            selectedFile = null;
+            preview.style.display = "none";
+            fileArea.style.display = "";
+            previewImg.src = "";
+            modal.classList.remove("active");
+            document.body.style.overflow = "";
+            showToast("Item reported successfully! ✅", "success");
+            document.getElementById("items-section").scrollIntoView({ behavior: "smooth" });
+            await loadItems();
+        } catch (err) {
+            console.error('Error submitting item:', err);
+            showToast('Failed to submit. Please try again.', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Report';
+        }
     });
 }
 
@@ -454,7 +409,6 @@ function setDefaultDate() {
     document.getElementById("itemDate").value = d.toISOString().split("T")[0];
 }
 
-// ===== Toast =====
 function showToast(msg, type = "success") {
     const container = document.getElementById("toastContainer");
     const toast = document.createElement("div");
@@ -464,7 +418,6 @@ function showToast(msg, type = "success") {
     setTimeout(() => { toast.style.opacity = "0"; toast.style.transform = "translateX(100%)"; setTimeout(() => toast.remove(), 400); }, 3500);
 }
 
-// ===== Counters Animation =====
 function initCounters() {
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -476,7 +429,6 @@ function initCounters() {
             }
         });
     }, { threshold: 0.3 });
-
     document.querySelectorAll(".hero-stats, .stats-grid").forEach(el => observer.observe(el));
 }
 
@@ -490,7 +442,6 @@ function animateCounter(el, target) {
     }, 25);
 }
 
-// ===== Scroll Animations =====
 function initScrollAnimations() {
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -500,7 +451,6 @@ function initScrollAnimations() {
             }
         });
     }, { threshold: 0.1 });
-
     document.querySelectorAll(".step-card, .stat-card, .section-header").forEach(el => {
         el.style.opacity = "0";
         el.style.transform = "translateY(30px)";
@@ -509,10 +459,8 @@ function initScrollAnimations() {
     });
 }
 
-// Add animation class
 document.head.insertAdjacentHTML("beforeend", `<style>.animate-in{opacity:1!important;transform:translateY(0)!important;}</style>`);
 
-// ===== Utilities =====
 function formatDate(dateStr) {
     const d = new Date(dateStr);
     const now = new Date();
