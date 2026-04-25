@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusFind — Lost & Found Portal</title>
+    <meta name="description" content="CampusFind is your college campus lost and found portal. Report lost items, post found items, and reunite with your belongings quickly.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Campus<strong>Find</strong></span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="#hero" class="nav-link active">Home</a>
+                <a href="#items-section" class="nav-link">Browse Items</a>
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <a href="#stats" class="nav-link">Stats</a>
+                <a href="admin.html" class="nav-link"><i class="fas fa-shield-halved" style="margin-right:4px;"></i>Admin</a>
+            </div>
+            <div class="nav-actions">
+                <button class="btn btn-glow" id="openPostModal">
+                    <i class="fas fa-plus"></i> Report Item
+                </button>
+                <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-bg">
+            <div class="hero-orb hero-orb-1"></div>
+            <div class="hero-orb hero-orb-2"></div>
+            <div class="hero-orb hero-orb-3"></div>
+            <div class="hero-grid"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-shield-halved"></i>
+                Trusted by 2,500+ students
+            </div>
+            <h1>Lost Something on Campus?<br><span class="gradient-text">We'll Help You Find It.</span></h1>
+            <p class="hero-subtitle">CampusFind connects lost items with their owners through a smart, community-driven platform. Search, report, and reunite — all in one place.</p>
+            <div class="hero-search">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="heroSearch" placeholder="Search for your lost item..." autocomplete="off">
+                    <button class="btn btn-primary" id="heroSearchBtn">Search</button>
+                </div>
+                <div class="search-tags">
+                    <span>Popular:</span>
+                    <button class="tag" data-search="phone">Phone</button>
+                    <button class="tag" data-search="wallet">Wallet</button>
+                    <button class="tag" data-search="laptop">Laptop</button>
+                    <button class="tag" data-search="keys">Keys</button>
+                    <button class="tag" data-search="id card">ID Card</button>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <span class="hero-stat-number" data-count="347">0</span>
+                    <span class="hero-stat-label">Items Reunited</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-number" data-count="89">0</span>
+                    <span class="hero-stat-label">Active Listings</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-number" data-count="95">0</span>
+                    <span class="hero-stat-label">% Recovery Rate</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Items Section -->
+    <section class="items-section" id="items-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Browse Listings</div>
+                <h2>Recent Lost & Found Items</h2>
+                <p>Browse through recently reported items or use filters to narrow down your search.</p>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="filters-bar" id="filtersBar">
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label for="filterSearch"><i class="fas fa-search"></i></label>
+                        <input type="text" id="filterSearch" placeholder="Search items..." autocomplete="off">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterStatus"><i class="fas fa-tag"></i></label>
+                        <select id="filterStatus">
+                            <option value="all">All Status</option>
+                            <option value="lost">Lost</option>
+                            <option value="found">Found</option>
+                            <option value="claimed">Claimed</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterCategory"><i class="fas fa-layer-group"></i></label>
+                        <select id="filterCategory">
+                            <option value="all">All Categories</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="accessories">Accessories</option>
+                            <option value="documents">Documents</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="keys">Keys</option>
+                            <option value="bags">Bags & Bottles</option>
+                            <option value="books">Books & Stationery</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterLocation"><i class="fas fa-location-dot"></i></label>
+                        <select id="filterLocation">
+                            <option value="all">All Locations</option>
+                            <option value="library">Library</option>
+                            <option value="cafeteria">Cafeteria</option>
+                            <option value="auditorium">Auditorium</option>
+                            <option value="gym">Gym / Sports</option>
+                            <option value="lab">Computer Lab</option>
+                            <option value="classroom">Classroom</option>
+                            <option value="parking">Parking Lot</option>
+                            <option value="hostel">Hostel</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterDate"><i class="fas fa-calendar"></i></label>
+                        <select id="filterDate">
+                            <option value="all">Any Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline btn-sm" id="clearFilters">
+                        <i class="fas fa-rotate-left"></i> Clear
+                    </button>
+                </div>
+                <div class="active-filters" id="activeFilters"></div>
+            </div>
+
+            <!-- Items Grid -->
+            <div class="items-grid" id="itemsGrid">
+                <!-- Items will be rendered by JavaScript -->
+            </div>
+            <div class="empty-state" id="emptyState" style="display:none;">
+                <i class="fas fa-inbox"></i>
+                <h3>No items found</h3>
+                <p>Try adjusting your filters or search query.</p>
+                <button class="btn btn-primary" id="emptyStateClear">Clear Filters</button>
+            </div>
+            <div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
+                <button class="btn btn-outline" id="loadMoreBtn">
+                    <i class="fas fa-arrow-down"></i> Load More Items
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-section" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Simple Process</div>
+                <h2>How CampusFind Works</h2>
+                <p>Three simple steps to report or find your lost belongings.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-icon">
+                        <i class="fas fa-file-pen"></i>
+                        <span class="step-number">01</span>
+                    </div>
+                    <h3>Report</h3>
+                    <p>Fill out a quick form with details about the item — whether you lost it or found it somewhere on campus.</p>
+                </div>
+                <div class="step-connector"><i class="fas fa-arrow-right"></i></div>
+                <div class="step-card">
+                    <div class="step-icon">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <span class="step-number">02</span>
+                    </div>
+                    <h3>Search & Match</h3>
+                    <p>Browse listings, filter by category, location, or date. Our smart search helps you find matches fast.</p>
+                </div>
+                <div class="step-connector"><i class="fas fa-arrow-right"></i></div>
+                <div class="step-card">
+                    <div class="step-icon">
+                        <i class="fas fa-handshake"></i>
+                        <span class="step-number">03</span>
+                    </div>
+                    <h3>Reunite</h3>
+                    <p>Contact the reporter, verify ownership, and get your belongings back. It's that simple!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section" id="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span class="stat-number" data-count="1284">0</span>
+                    <span class="stat-label">Items Reported</span>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-check-circle"></i>
+                    <span class="stat-number" data-count="347">0</span>
+                    <span class="stat-label">Items Claimed</span>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <span class="stat-number" data-count="2500">0</span>
+                    <span class="stat-label">Active Users</span>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-clock"></i>
+                    <span class="stat-number" data-count="24">0</span>
+                    <span class="stat-label">Avg. Hours to Reunite</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="nav-logo">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Campus<strong>Find</strong></span>
+                    </a>
+                    <p>Helping students reunite with their lost belongings since 2024. A community-driven initiative by the Student Council.</p>
+                    <div class="footer-socials">
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links-group">
+                    <h4>Quick Links</h4>
+                    <a href="#hero">Home</a>
+                    <a href="#items-section">Browse Items</a>
+                    <a href="#how-it-works">How It Works</a>
+                </div>
+                <div class="footer-links-group">
+                    <h4>Categories</h4>
+                    <a href="#">Electronics</a>
+                    <a href="#">Documents</a>
+                    <a href="#">Accessories</a>
+                    <a href="#">Clothing</a>
+                </div>
+                <div class="footer-links-group">
+                    <h4>Contact</h4>
+                    <a href="mailto:lostandfound@campus.edu"><i class="fas fa-envelope"></i> lostandfound@campus.edu</a>
+                    <a href="#"><i class="fas fa-phone"></i> +91 98765 43210</a>
+                    <a href="#"><i class="fas fa-building"></i> Student Affairs Office, Block A</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 CampusFind. All rights reserved. Made with <i class="fas fa-heart" style="color:var(--accent)"></i> by students, for students.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Post Item Modal -->
+    <div class="modal-overlay" id="postModal">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-header">
+                <h2 id="modalTitle">Report an Item</h2>
+                <button class="modal-close" id="closePostModal" aria-label="Close modal"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="postForm" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemType">Type <span class="req">*</span></label>
+                            <div class="toggle-group">
+                                <input type="radio" name="itemType" id="typeLost" value="lost" checked>
+                                <label for="typeLost" class="toggle-label toggle-lost"><i class="fas fa-circle-exclamation"></i> I Lost Something</label>
+                                <input type="radio" name="itemType" id="typeFound" value="found">
+                                <label for="typeFound" class="toggle-label toggle-found"><i class="fas fa-hand-holding-heart"></i> I Found Something</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemName">Item Name <span class="req">*</span></label>
+                            <input type="text" id="itemName" placeholder="e.g. Black iPhone 15" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemCategory">Category <span class="req">*</span></label>
+                            <select id="itemCategory" required>
+                                <option value="">Select category</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="accessories">Accessories</option>
+                                <option value="documents">Documents</option>
+                                <option value="clothing">Clothing</option>
+                                <option value="keys">Keys</option>
+                                <option value="bags">Bags & Bottles</option>
+                                <option value="books">Books & Stationery</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemLocation">Location <span class="req">*</span></label>
+                            <select id="itemLocation" required>
+                                <option value="">Select location</option>
+                                <option value="library">Library</option>
+                                <option value="cafeteria">Cafeteria</option>
+                                <option value="auditorium">Auditorium</option>
+                                <option value="gym">Gym / Sports</option>
+                                <option value="lab">Computer Lab</option>
+                                <option value="classroom">Classroom</option>
+                                <option value="parking">Parking Lot</option>
+                                <option value="hostel">Hostel</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemDate">Date <span class="req">*</span></label>
+                            <input type="date" id="itemDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemDescription">Description</label>
+                        <textarea id="itemDescription" rows="3" placeholder="Describe the item — color, brand, distinguishing features..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reporterName">Your Name <span class="req">*</span></label>
+                            <input type="text" id="reporterName" placeholder="e.g. Rahul Sharma" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reporterContact">Contact <span class="req">*</span></label>
+                            <input type="text" id="reporterContact" placeholder="Phone or Email" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemImage">Upload Image (optional)</label>
+                        <div class="file-upload" id="fileUploadArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drag & drop or <span>browse</span></p>
+                            <input type="file" id="itemImage" accept="image/*" hidden>
+                        </div>
+                        <div class="image-preview" id="imagePreview" style="display:none;">
+                            <img id="previewImg" alt="Preview">
+                            <button type="button" class="remove-img" id="removeImage"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full" id="submitPost">
+                        <i class="fas fa-paper-plane"></i> Submit Report
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Detail Modal -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal modal-detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+            <div class="modal-header">
+                <h2 id="detailTitle">Item Details</h2>
+                <button class="modal-close" id="closeDetailModal" aria-label="Close modal"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="detailBody">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
