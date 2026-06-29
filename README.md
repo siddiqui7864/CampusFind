@@ -209,17 +209,6 @@ If we had more time, here's what we'd build:
 
 ---
 
-## 👥 Team
-
-| Name | Role |
-|------|------|
-| **Kunal Dubey** | Developer |
-| **Anjali Kumari** | Developer |
-| **Ambika Bains** | Developer |
-| **Abu Shad Siddiqui** | Developer |
-
----
-
 ## 📜 License
 
 This project is open source under the [MIT License](LICENSE).
