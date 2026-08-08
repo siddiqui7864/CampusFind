@@ -127,7 +127,7 @@ Findora/
 ### 1. Clone & Configure
 
 ```bash
-git clone https://github.com/siddiqui7864/Findora.git
+git clone https://github.com/sh4dr0x/Findora.git
 cd Findora
 ```
 
